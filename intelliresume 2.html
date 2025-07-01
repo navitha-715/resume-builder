@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>IntelliResume - AI Resume Builder</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+    .form-section, .resume-section {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      flex: 1;
+      min-width: 350px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1, h2 {
+      margin: 0 0 10px;
+    }
+    h2 {
+      color: #6a1b9a;
+      border-bottom: 2px solid #6a1b9a;
+      padding-bottom: 5px;
+    }
+    input, textarea {
+      width: 100%;
+      margin-bottom: 12px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #6a1b9a;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px 5px 5px 0;
+    }
+    .tag {
+      display: inline-block;
+      background: #eee;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin: 2px 4px 0 0;
+    }
+    img#profile-pic {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-top: 10px;
+    }
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .form-section {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Input Form -->
+  <div class="form-section">
+    <h2>Enter Resume Details</h2>
+    <input type="text" id="name" placeholder="Full Name" oninput="updateResume()" />
+    <input type="text" id="headline" placeholder="Headline or Role" oninput="updateResume()" />
+    <input type="text" id="email" placeholder="Email" oninput="updateResume()" />
+    <input type="text" id="linkedin" placeholder="LinkedIn Username" oninput="updateResume()" />
+    <input type="text" id="address" placeholder="Address" oninput="updateResume()" />
+
+    <label>Upload Photo:</label>
+    <input type="file" accept="image/*" onchange="uploadPhoto(event)" />
+
+    <textarea id="experience" placeholder="Work Experience" rows="4" oninput="updateResume()"></textarea>
+    <textarea id="projects" placeholder="Projects" rows="4" oninput="updateResume()"></textarea>
+    <textarea id="education" placeholder="Education" rows="3" oninput="updateResume()"></textarea>
+    <textarea id="skills" placeholder="Skills (comma separated)" oninput="updateResume()"></textarea>
+    <textarea id="achievements" placeholder="Achievements" rows="2" oninput="updateResume()"></textarea>
+    <textarea id="interests" placeholder="Other Interests" oninput="updateResume()"></textarea>
+
+    <button onclick="createResume()">Create Resume</button>
+    <button onclick="generateSummary()">Generate Summary</button>
+    <button onclick="downloadPDF()">Download PDF</button>
+    <button onclick="saveData()">Save</button>
+    <button onclick="loadData()">Load</button>
+  </div>
+
+  <!-- Resume Preview -->
+  <div class="resume-section" id="resume">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <h1 id="r-name">Your Name</h1>
+        <p id="r-headline">Headline goes here</p>
+        <p>Email: <span id="r-email">you@example.com</span></p>
+        <p>LinkedIn: <span id="r-linkedin">linkedin.com/in/username</span></p>
+        <p>Address: <span id="r-address">Your address...</span></p>
+      </div>
+      <img id="profile-pic" src="" alt="Profile Photo" />
+    </div>
+
+    <h2>Summary</h2>
+    <div id="r-summary" class="section">Click "Generate Summary" to auto-generate one.</div>
+
+    <h2>Work Experience</h2>
+    <div class="section" id="r-experience">Your experience...</div>
+
+    <h2>Projects</h2>
+    <div class="section" id="r-projects">Your projects...</div>
+
+    <h2>Education</h2>
+    <div class="section" id="r-education">Your education...</div>
+
+    <h2>Skills</h2>
+    <div class="section" id="r-skills"></div>
+
+    <h2>Achievements</h2>
+    <div class="section" id="r-achievements">Your achievements...</div>
+
+    <h2>Other Interests</h2>
+    <div class="section" id="r-interests">Your hobbies...</div>
+  </div>
+</div>
+
+<script>
+  function updateResume() {
+    document.getElementById('r-name').innerText = document.getElementById('name').value || "Your Name";
+    document.getElementById('r-headline').innerText = document.getElementById('headline').value || "Headline goes here";
+    document.getElementById('r-email').innerText = document.getElementById('email').value || "you@example.com";
+    document.getElementById('r-linkedin').innerText = "linkedin.com/in/" + (document.getElementById('linkedin').value || "username");
+    document.getElementById('r-address').innerText = document.getElementById('address').value || "Your address...";
+    document.getElementById('r-experience').innerText = document.getElementById('experience').value || "Your experience...";
+    document.getElementById('r-projects').innerText = document.getElementById('projects').value || "Your projects...";
+    document.getElementById('r-education').innerText = document.getElementById('education').value || "Your education...";
+    document.getElementById('r-achievements').innerText = document.getElementById('achievements').value || "Your achievements...";
+    document.getElementById('r-interests').innerText = document.getElementById('interests').value || "Your hobbies...";
+
+    let skills = document.getElementById('skills').value.split(',');
+    let html = "";
+    skills.forEach(skill => {
+      if (skill.trim()) html += `<span class="tag">${skill.trim()}</span>`;
+    });
+    document.getElementById('r-skills').innerHTML = html;
+  }
+
+  function uploadPhoto(event) {
+    const reader = new FileReader();
+    reader.onload = function () {
+      document.getElementById('profile-pic').src = reader.result;
+    };
+    reader.readAsDataURL(event.target.files[0]);
+  }
+
+  function generateSummary() {
+    const rawName = document.getElementById('name').value.trim();
+    const rawHeadline = document.getElementById('headline').value.trim();
+    const rawSkills = document.getElementById('skills').value.trim();
+    const rawExperience = document.getElementById('experience').value.trim();
+    const rawEducation = document.getElementById('education').value.trim();
+
+    // Capitalize and correct spelling
+    const name = rawName ? capitalize(correctSpelling(rawName)) : "This candidate";
+    const headline = rawHeadline ? capitalize(correctSpelling(rawHeadline)) : "a professional";
+    const skillsArray = rawSkills
+      ? rawSkills.split(',').map(s => correctSpelling(s.trim())).filter(s => s)
+      : [];
+    const skills = skillsArray.length ? skillsArray.join(', ') : "relevant skills";
+    const experience = rawExperience ? correctSpelling(rawExperience) : "relevant experience";
+    const education = rawEducation ? correctSpelling(rawEducation) : "a strong educational background";
+
+    const firstName = name.split(' ')[0];
+
+    const summary = 
+      `${name} is a dedicated and results-driven ${headline} with expertise in ${skills}. ` +
+      `They have demonstrated their abilities through hands-on work, including: ${experience}. ` +
+      `Armed with ${education}, ${firstName} remains committed to continuous learning and to making meaningful contributions in their field.`;
+
+    document.getElementById('r-summary').innerText = summary;
+  }
+
+  function capitalize(sentence) {
+    return sentence
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  function correctSpelling(text) {
+    const commonMistakes = {
+      "definately": "definitely",
+      "recieve": "receive",
+      "adress": "address",
+      "teh": "the",
+      "experiance": "experience",
+      "educaton": "education",
+      "skils": "skills",
+      "achivements": "achievements",
+      "proffesional": "professional",
+      "responcible": "responsible",
+      "manger": "manager",
+      "enviroment": "environment"
+    };
+
+    Object.keys(commonMistakes).forEach(misspelled => {
+      const correct = commonMistakes[misspelled];
+      const regex = new RegExp(`\\b${misspelled}\\b`, 'gi');
+      text = text.replace(regex, correct);
+    });
+
+    return text;
+  }
+
+  function createResume() {
+    updateResume();
+    generateSummary();
+    alert("Resume Created Successfully!");
+  }
+
+  function downloadPDF() {
+    const resume = document.getElementById('resume');
+    html2pdf().from(resume).save('resume.pdf');
+  }
+
+  function saveData() {
+    const fields = ['name', 'headline', 'email', 'linkedin', 'address', 'experience', 'projects', 'education', 'skills', 'achievements', 'interests'];
+    const data = {};
+    fields.forEach(id => data[id] = document.getElementById(id).value);
+    data.photo = document.getElementById('profile-pic').src;
+    localStorage.setItem("resumeData", JSON.stringify(data));
+    alert("Data saved!");
+  }
+
+  function loadData() {
+    const data = JSON.parse(localStorage.getItem("resumeData"));
+    if (data) {
+      Object.keys(data).forEach(id => {
+        if (id !== 'photo') document.getElementById(id).value = data[id];
+      });
+      document.getElementById('profile-pic').src = data.photo || "";
+      updateResume();
+      generateSummary();
+      alert("Data loaded!");
+    } else {
+      alert("No saved data found.");
+    }
+  }
+</script>
+
+</body>
+</html>
